@@ -32,7 +32,7 @@ def scan_folder(folder_path, filter_exts=None):
     ext_counter = Counter()
     ext_sizes = Counter()
 
-    newest_files = []
+    all_files = []
 
     for root, _, files in os.walk(folder_path):
         for name in files:
@@ -58,10 +58,11 @@ def scan_folder(folder_path, filter_exts=None):
             ext_counter[ext] += 1
             ext_sizes[ext] += size
 
-            newest_files.append((filepath, mtime, size))
+            all_files.append((filepath, mtime, size))
 
-    newest_files.sort(key=lambda f: f[1], reverse=True)
-    newest_files = newest_files[:5]
+    all_files.sort(key=lambda f: f[1])
+    oldest_files = all_files[:5]
+    newest_files = all_files[-5:][::-1]
 
     return {
         "total_files": total_files,
@@ -71,6 +72,7 @@ def scan_folder(folder_path, filter_exts=None):
         "ext_counter": ext_counter,
         "ext_sizes": ext_sizes,
         "newest_files": newest_files,
+        "oldest_files": oldest_files,
     }
 
 
@@ -101,6 +103,17 @@ def build_report(folder_path, stats, filter_exts=None):
     lines.append("-" * 60)
     if stats["newest_files"]:
         for filepath, mtime, size in stats["newest_files"]:
+            modified = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
+            lines.append(f"  {modified}  {format_size(size):>10}  {filepath}")
+    else:
+        lines.append("  (none)")
+
+    lines.append("")
+    lines.append("-" * 60)
+    lines.append("5 OLDEST FILES (by date modified)")
+    lines.append("-" * 60)
+    if stats["oldest_files"]:
+        for filepath, mtime, size in stats["oldest_files"]:
             modified = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
             lines.append(f"  {modified}  {format_size(size):>10}  {filepath}")
     else:
