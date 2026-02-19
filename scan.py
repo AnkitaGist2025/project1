@@ -64,7 +64,13 @@ def scan_folder(folder_path, filter_exts=None):
 
     all_files.sort(key=lambda f: f[1])
     oldest_files = all_files[:5]
-    new_files = all_files[-5:][::-1]
+
+    newest_files = all_files[-5:][::-1]
+
+    top_largest = sorted(all_files, key=lambda f: f[2], reverse=True)[:5]
+
+  
+
 
     duplicates = {name: count for name, count in name_counter.items() if count > 1}
 
@@ -77,6 +83,7 @@ def scan_folder(folder_path, filter_exts=None):
         "ext_sizes": ext_sizes,
         "newest_files": newest_files,
         "oldest_files": oldest_files,
+        "top_largest": top_largest,
         "duplicates": duplicates,
     }
 
@@ -121,6 +128,16 @@ def build_report(folder_path, stats, filter_exts=None):
         for filepath, mtime, size in stats["oldest_files"]:
             modified = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
             lines.append(f"  {modified}  {format_size(size):>10}  {filepath}")
+    else:
+        lines.append("  (none)")
+
+    lines.append("")
+    lines.append("-" * 60)
+    lines.append("5 LARGEST FILES (by size)")
+    lines.append("-" * 60)
+    if stats["top_largest"]:
+        for filepath, mtime, size in stats["top_largest"]:
+            lines.append(f"  {format_size(size):>10}  {filepath}")
     else:
         lines.append("  (none)")
 
