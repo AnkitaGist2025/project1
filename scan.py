@@ -32,7 +32,7 @@ def scan_folder(folder_path, filter_exts=None):
     ext_counter = Counter()
     ext_sizes = Counter()
 
-    newest_files = []
+    add_files = []
 
     for root, _, files in os.walk(folder_path):
         for name in files:
