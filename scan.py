@@ -17,8 +17,14 @@ def format_size(size_bytes):
     return f"{size_bytes:.2f} PB"
 
 
-def scan_folder(folder_path):
-    """Scan all files in a folder and return stats."""
+def scan_folder(folder_path, filter_exts=None):
+    """Scan all files in a folder and return stats.
+
+    Args:
+        folder_path: Directory to scan.
+        filter_exts: Optional set of lowercase extensions (e.g. {'.py', '.txt'})
+                     to include. If None, all files are included.
+    """
     total_files = 0
     total_size = 0
     largest_file = None
@@ -28,6 +34,11 @@ def scan_folder(folder_path):
 
     for root, _, files in os.walk(folder_path):
         for name in files:
+            ext = os.path.splitext(name)[1].lower() or "(no extension)"
+
+            if filter_exts and ext not in filter_exts:
+                continue
+
             filepath = os.path.join(root, name)
             try:
                 size = os.path.getsize(filepath)
@@ -41,7 +52,6 @@ def scan_folder(folder_path):
                 largest_size = size
                 largest_file = filepath
 
-            ext = os.path.splitext(name)[1].lower() or "(no extension)"
             ext_counter[ext] += 1
             ext_sizes[ext] += size
 
@@ -55,7 +65,7 @@ def scan_folder(folder_path):
     }
 
 
-def build_report(folder_path, stats):
+def build_report(folder_path, stats, filter_exts=None):
     """Build the report string."""
     lines = []
     lines.append("=" * 60)
@@ -63,6 +73,8 @@ def build_report(folder_path, stats):
     lines.append("=" * 60)
     lines.append(f"Folder:    {os.path.abspath(folder_path)}")
     lines.append(f"Scanned:   {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    if filter_exts:
+        lines.append(f"Filter:    {', '.join(sorted(filter_exts))}")
     lines.append("")
     lines.append(f"Total files:   {stats['total_files']}")
     lines.append(f"Total size:    {format_size(stats['total_size'])}")
@@ -91,6 +103,12 @@ def main():
     parser = argparse.ArgumentParser(description="Scan a folder and generate a summary report.")
     parser.add_argument("folder", help="Path to the folder to scan")
     parser.add_argument("-o", "--output", help="Output report file path (default: scan_report.txt)")
+    parser.add_argument(
+        "-e", "--ext",
+        nargs="+",
+        metavar="EXT",
+        help="Filter by file extension(s), e.g. -e .py .txt .md",
+    )
     args = parser.parse_args()
 
     folder = args.folder
@@ -98,8 +116,13 @@ def main():
         print(f"Error: '{folder}' is not a valid directory.", file=sys.stderr)
         sys.exit(1)
 
-    stats = scan_folder(folder)
-    report = build_report(folder, stats)
+    filter_exts = None
+    if args.ext:
+        filter_exts = {e if e.startswith(".") else f".{e}" for e in args.ext}
+        filter_exts = {e.lower() for e in filter_exts}
+
+    stats = scan_folder(folder, filter_exts=filter_exts)
+    report = build_report(folder, stats, filter_exts=filter_exts)
 
     print(report)
 
