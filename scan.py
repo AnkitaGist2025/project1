@@ -64,9 +64,13 @@ def scan_folder(folder_path, filter_exts=None):
 
     all_files.sort(key=lambda f: f[1])
     oldest_files = all_files[:5]
+
     newest_files = all_files[-5:][::-1]
 
     top_largest = sorted(all_files, key=lambda f: f[2], reverse=True)[:5]
+
+  
+
 
     duplicates = {name: count for name, count in name_counter.items() if count > 1}
 
