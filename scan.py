@@ -31,12 +31,9 @@ def scan_folder(folder_path, filter_exts=None):
     largest_size = 0
     ext_counter = Counter()
     ext_sizes = Counter()
+    name_counter = Counter()
 
-
-
-
-    add_files = []
-
+    all_files = []
 
     for root, _, files in os.walk(folder_path):
         for name in files:
@@ -61,12 +58,15 @@ def scan_folder(folder_path, filter_exts=None):
 
             ext_counter[ext] += 1
             ext_sizes[ext] += size
+            name_counter[name] += 1
 
             all_files.append((filepath, mtime, size))
 
     all_files.sort(key=lambda f: f[1])
     oldest_files = all_files[:5]
     newest_files = all_files[-5:][::-1]
+
+    duplicates = {name: count for name, count in name_counter.items() if count > 1}
 
     return {
         "total_files": total_files,
@@ -77,6 +77,7 @@ def scan_folder(folder_path, filter_exts=None):
         "ext_sizes": ext_sizes,
         "newest_files": newest_files,
         "oldest_files": oldest_files,
+        "duplicates": duplicates,
     }
 
 
@@ -122,6 +123,19 @@ def build_report(folder_path, stats, filter_exts=None):
             lines.append(f"  {modified}  {format_size(size):>10}  {filepath}")
     else:
         lines.append("  (none)")
+
+    lines.append("")
+    lines.append("-" * 60)
+    lines.append("DUPLICATE FILE NAMES")
+    lines.append("-" * 60)
+    duplicates = stats["duplicates"]
+    if duplicates:
+        lines.append(f"  {len(duplicates)} duplicate name(s) found:")
+        lines.append("")
+        for name, count in sorted(duplicates.items(), key=lambda x: x[1], reverse=True):
+            lines.append(f"  {name:<40} {count} copies")
+    else:
+        lines.append("  No duplicate file names found.")
 
     lines.append("")
     lines.append("-" * 60)
